@@ -1,54 +1,81 @@
-from flask import Flask, jsonify
-from OpenSSL import SSL
 import torch
-from torch.utils.data import DataLoader, TensorDataset, RandomSampler
-from transformers import GPT2ForSequenceClassification, GPT2Tokenizer, AdamW
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 import pandas as pd
 import numpy as np
+import time
+import json
+
+from flask import Flask, jsonify, request
+from torch.utils.data import DataLoader, TensorDataset, RandomSampler
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2ForSequenceClassification, GPT2Tokenizer
+
 
 app = Flask (__name__)
 
-def prediction(conversation):
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-    tokenizer.pad_token = tokenizer.eos_token
+def load_model():
+    global tokenizer
+    global model
 
-    model = GPT2ForSequenceClassification.from_pretrained('my_gpt_model')
-    label_map = {0: "Normal Message", 1: "Fraudulent Message"}
+    tokenizer = GPT2Tokenizer.from_pretrained('./models/tuned_gpt_model')
+    model = GPT2ForSequenceClassification.from_pretrained('./models/tuned_gpt_model')
 
+def prediction(input):
+ 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    start_time = time.time()
     
-    # Example of preparing an input for prediction
-    texts = [conversation]
-    encodings = tokenizer(texts, truncation=True, padding=True, max_length=512, return_tensors="pt")
+    # Tokenize the input data
+    inputs = tokenizer(input, return_tensors='pt', padding=True, truncation=True)
 
-    # Move tensors to the same device as model
-    input_ids = encodings['input_ids']
-    attention_mask = encodings['attention_mask']
-
-    # Predict
-    model.eval()
+    # Make predictions
     with torch.no_grad():
-        outputs = model(input_ids, attention_mask=attention_mask)
-        predictions = torch.argmax(outputs.logits, dim=-1)
+        outputs = model(**inputs)
 
-    print([label_map[label.item()] for label in predictions])
+    # Get the predicted class
+    predictions = torch.argmax(outputs.logits, dim=-1)
+    # Map the predictions to 'normal' or 'fraud'
+    label_map = {1: 'normal', 0: 'fraud'}
+    predicted_labels = [label_map[pred.item()] for pred in predictions]
 
-    return [label_map[label.item()] for label in predictions]
+    end_time = time.time()
+    time_taken = end_time - start_time
+
+    return predicted_labels[0], time_taken
+
+
+with app.app_context():
+    load_model()
 
 @app.route('/')
 def main():
     return 'Hello World'
 
-@app.route('/api/data', methods=['GET'])
-def get_data():
-    result = prediction("Hello, I'm calling from the survey department. You've been selected to participate in a paid survey. Can you confirm your bank details for the payment?")
+@app.route('/api/data', methods=['POST'])
+def post_data():
+    data = request.get_json()
+    print("Content: ", data)
+
+    if 'input' not in data:
+        return 'Error: No message provided'
+    else:
+        input = data['input']
+        print("Input: ", input)
+        output, predict_timing = prediction(str(input))
 
     data = {
-        "prediction": result[0]
+        "message": "I got it",
+        "output": output,
+        "timeTaken": str(predict_timing)
     }
+
     return jsonify(data)
+
+# @app.route('/api/load_model', methods=['GET'])
+# def load_model():
+
+#     model, tokenizer = load_model()
+#     return model, tokenizer
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='192.168.68.54',port = '8080', debug=True)
