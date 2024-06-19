@@ -63,7 +63,7 @@ def post_data():
         output, predict_timing = prediction(str(input))
 
     data = {
-        "message": "I got it",
+        "message": "Success",
         "output": output,
         "timeTaken": str(predict_timing)
     }
@@ -78,4 +78,4 @@ def post_data():
 
 
 if __name__ == '__main__':
-    app.run(host='192.168.68.54',port = '8080', debug=True)
+    app.run(host='192.168.68.52',port = '8080', debug=True)
