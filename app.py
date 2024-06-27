@@ -2,11 +2,11 @@ import torch
 import pandas as pd
 import numpy as np
 import time
-import json
+import os
 
 from flask import Flask, jsonify, request
 from torch.utils.data import DataLoader, TensorDataset, RandomSampler
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, GPT2ForSequenceClassification, GPT2Tokenizer
+from transformers import GPT2ForSequenceClassification, GPT2Tokenizer
 
 
 app = Flask (__name__)
@@ -78,4 +78,4 @@ def post_data():
 
 
 if __name__ == '__main__':
-    app.run(host='192.168.68.52',port = '8080', debug=True)
+    app.run(host='0.0.0.0',port=int(os.environ.get("PORT", 8080)), debug=True)
