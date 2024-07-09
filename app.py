@@ -70,12 +70,6 @@ def post_data():
 
     return jsonify(data)
 
-# @app.route('/api/load_model', methods=['GET'])
-# def load_model():
-
-#     model, tokenizer = load_model()
-#     return model, tokenizer
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=int(os.environ.get("PORT", 8080)), debug=True)
