@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+torch
+torchvision
+torchaudio
+transformers
+datasets
+accelerate
+evaluate
+bitsandbytes
+huggingface_hub
+trl
+peft
+flask
